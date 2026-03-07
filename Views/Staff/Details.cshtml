@@ -1,0 +1,798 @@
+﻿@model Patient_Enquiry_System_version_2.Models.StaffTicketDetailsViewModel
+@using Patient_Enquiry_System_version_2.Models
+@using System.Text.RegularExpressions
+
+@{
+    ViewBag.Title = "Ticket Details";
+
+    // Read highlight keyword from URL
+    var highlight = Request.QueryString["highlight"];
+
+    int matchCount = 0;
+}
+
+<style>
+
+    /* layout */
+
+    .page-container {
+        display: flex;
+        gap: 20px;
+    }
+
+    .chat-section {
+        flex: 3;
+    }
+
+    .info-section {
+        flex: 1;
+        border: 1px solid #ccc;
+        border-radius: 6px;
+        padding: 10px;
+        background-color: #fafafa;
+        position: sticky;
+        top: 10px;
+        height: fit-content;
+    }
+
+    /* chat */
+
+    .chat-container {
+        width: 100%;
+        max-width: 800px;
+        padding: 10px;
+        border: 1px solid #ccc;
+        border-radius: 6px;
+        background-color: #f5f5f5;
+        /* CRITICAL FIX */
+        height: 500px;
+        overflow-y: auto;
+        
+    }
+
+    .chat-message {
+        padding: 8px 12px;
+        margin: 6px 0;
+        border-radius: 10px;
+        max-width: 70%;
+        word-wrap: break-word;
+    }
+
+    .staff-message {
+        background-color: #e0e0e0;
+    }
+
+    .patient-message {
+        background-color: #c8f7c5;
+        margin-left: auto;
+    }
+
+    .chat-time {
+        font-size: 11px;
+        color: #555;
+    }
+
+    /* highlight */
+
+    .highlight {
+        background-color: yellow;
+        font-weight: bold;
+    }
+    /* active match */
+    .highlight-active {
+        background-color: orange;
+    }
+    .search-nav {
+        position: sticky;
+        top: 0;
+        background-color: white;
+        padding: 8px;
+        border-bottom: 1px solid #ccc;
+        z-index: 1000;
+    }
+</style>
+
+
+<h2>Ticket #@Model.Ticket.TicketId</h2>
+
+
+<div class="page-container">
+
+
+    <div class="chat-section">
+
+        <div class="search-nav">
+
+            <h3 style="margin:0;">
+                Conversation
+            </h3>
+
+            @if (!string.IsNullOrWhiteSpace(highlight))
+            {
+                <div>
+
+                    search: "<b>@highlight</b>"
+
+                    <button type="button" onclick="prevMatch()">↑</button>
+
+                    <button type="button" onclick="nextMatch()">↓</button>
+
+                    <span id="matchCounter"></span>
+
+                </div>
+            }
+
+        </div>
+
+
+        <div class="chat-container">
+            @if (Model.Messages != null && Model.Messages.Count > 0)
+            {
+                foreach (var msg in Model.Messages)
+                {
+                    var text = msg.MessageText;
+
+                    // =====================================================
+                    // Highlight keyword if search active
+                    // =====================================================
+                    if (!string.IsNullOrWhiteSpace(highlight))
+                    {
+                        var matches = Regex.Matches(
+                            text,
+                            Regex.Escape(highlight),
+                            RegexOptions.IgnoreCase
+                        );
+
+                        matchCount += matches.Count;
+
+                        text = Regex.Replace(
+                            text,
+                            Regex.Escape(highlight),
+                            "<span class='highlight'>$0</span>",
+                            RegexOptions.IgnoreCase
+                        );
+                    }
+
+                    // =====================================================
+                    // STAFF MESSAGE
+                    // data-id is REQUIRED for AJAX live update
+                    // =====================================================
+                    if (msg.SenderType == "Staff")
+                    {
+                        <div class="chat-message staff-message"
+                             data-id="@msg.TicketMessageId">
+
+                            <div>
+                                @Html.Raw(text)
+                            </div>
+
+                            @if (!string.IsNullOrEmpty(msg.FileUrl))
+                            {
+                                if (msg.FileType == "image")
+                                {
+                                    <div>
+                                        <a href="@msg.FileUrl" target="_blank">
+                                            <img src="@msg.FileUrl"
+                                                 style="max-width:250px; max-height:250px; border-radius:6px; margin-top:6px;" />
+                                        </a>
+                                    </div>
+                                }
+                                else if (msg.FileType == "pdf")
+                                {
+                                    <div style="margin-top:6px;">
+                                        <a href="@msg.FileUrl" target="_blank"
+                                           style="background:#ff5722; color:white; padding:4px 10px; border-radius:4px; text-decoration:none;">
+                                            📄 View PDF
+                                        </a>
+                                    </div>
+                                }
+                            }
+
+                            <div class="chat-time">
+                                Staff • @msg.SentAt.ToLocalTime()
+                            </div>
+
+                        </div>
+                    }
+
+                    // =====================================================
+                    // PATIENT MESSAGE
+                    // data-id is REQUIRED for AJAX live update
+                    // =====================================================
+                    else
+                    {
+                        <div class="chat-message patient-message"
+                             data-id="@msg.TicketMessageId">
+
+                            <div>
+                                @Html.Raw(text)
+                            </div>
+
+                            @if (!string.IsNullOrEmpty(msg.FileUrl))
+                            {
+                                if (msg.FileType == "image")
+                                {
+                                    <div>
+                                        <a href="@msg.FileUrl" target="_blank">
+                                            <img src="@msg.FileUrl"
+                                                 style="max-width:250px; max-height:250px; border-radius:6px; margin-top:6px;" />
+                                        </a>
+                                    </div>
+                                }
+                                else if (msg.FileType == "pdf")
+                                {
+                                    <div style="margin-top:6px;">
+                                        <a href="@msg.FileUrl" target="_blank"
+                                           style="background:#ff5722; color:white; padding:4px 10px; border-radius:4px; text-decoration:none;">
+                                            📄 View PDF
+                                        </a>
+                                    </div>
+                                }
+                            }
+
+                            <div class="chat-time">
+                                Patient • @msg.SentAt.ToLocalTime()
+                            </div>
+
+                        </div>
+                    }
+                }
+            }
+            else
+            {
+                <p>No messages found.</p>
+            }
+        </div>
+
+
+        @if (!string.IsNullOrWhiteSpace(highlight))
+        {
+            <p>
+                Matches found: <b>@matchCount</b>
+            </p>
+        }
+
+
+        <hr>
+
+
+        <h3>Reply to Patient</h3>
+
+        <form id="replyForm" method="post" action="@Url.Action("Reply","Staff")">
+
+            <input type="hidden"
+                   name="TicketId"
+                   value="@Model.Ticket.TicketId" />
+
+            <textarea id="messageTextarea" name="MessageText"
+                      rows="4"
+                      cols="60"
+                      required></textarea>
+
+            <br><br>
+
+            <label>Status:</label>
+
+            <select name="NewStatus">
+
+                <option value="">Keep Current</option>
+                <option value="InProgress">InProgress</option>
+                <option value="Closed">Closed</option>
+
+            </select>
+
+            <br><br>
+
+            <label>Priority:</label>
+
+            <select name="NewPriority">
+
+                <option value="">Keep Current</option>
+                <option value="Low">Low</option>
+                <option value="Medium">Medium</option>
+                <option value="High">High</option>
+                <option value="Critical">Critical</option>
+
+            </select>
+
+            <br><br>
+
+            <button type="submit">
+                Send Reply
+            </button>
+
+        </form>
+
+    </div>
+
+
+
+    <div class="info-section">
+
+        <h3>Patient Info</h3>
+
+        <p>
+            <b>Patient ID:</b><br>
+            @Model.Ticket.PatientId
+        </p>
+
+        <p>
+            <b>Status:</b><br>
+            @Model.Ticket.Status
+        </p>
+
+        <p>
+            <b>Priority:</b><br>
+            @Model.Ticket.Priority
+        </p>
+
+        <p>
+            <b>Created:</b><br>
+            @Model.Ticket.CreatedAt.ToLocalTime()
+        </p>
+
+        <p>
+            <b>Closed:</b><br>
+            @(Model.Ticket.ClosedAt?.ToLocalTime() ?? (object)"Still Open")
+        </p>
+
+    </div>
+
+
+</div>
+
+
+<br>
+
+
+<a href="@Url.Action("Index","Staff")">
+    Back to Dashboard
+</a>
+
+
+<script>
+    history.scrollRestoration = "manual";
+    window.scrollTo(0, 0);  
+
+    let matches = [];
+    let currentIndex = 0;
+
+    let lastMessageId = 0;
+
+
+    // =====================================================
+    // INITIAL LOAD
+    // =====================================================
+   
+
+
+    document.addEventListener("DOMContentLoaded", function () {
+        window.scrollTo(0, 0);
+
+        let container =
+            document.querySelector(".chat-container");
+
+        if (!container)
+            return;
+        setTimeout(function () {
+            container.scrollTop = container.scrollHeight;
+        }, 50);
+
+
+        
+
+        // =====================================================
+        // SET LAST MESSAGE ID
+        // =====================================================
+        let messages =
+            container.querySelectorAll(".chat-message");
+
+        if (messages.length > 0) {
+            lastMessageId =
+                parseInt(
+                    messages[messages.length - 1].dataset.id
+                );
+        }
+
+
+        
+
+
+        // =====================================================
+        // INFINITE SCROLL LISTENER
+        // =====================================================
+        container.addEventListener("scroll", function () {
+
+            if (
+                container.scrollTop <= 5 &&
+                !isLoadingOlder
+            ) {
+                loadOlderMessages();
+            }
+
+        });
+
+
+        // =====================================================
+        // START LIVE POLLING (DELAYED)
+        // prevents scroll override
+        // =====================================================
+        setTimeout(function () {
+
+            setInterval(function () {
+
+                if (isLoadingOlder)
+                    return;
+
+                fetchNewMessages();
+
+            }, 3000);
+
+        }, 1500);
+
+    });
+
+
+    // =====================================================
+    // SCROLL
+    // =====================================================
+    function scrollToBottom() {
+        let container =
+            document.querySelector(".chat-container");
+
+        if (!container)
+            return;
+
+        container.scrollTop =
+            container.scrollHeight;
+    }
+
+
+    function isUserNearBottom() {
+        let container =
+            document.querySelector(".chat-container");
+
+        return (
+            container.scrollHeight -
+            container.scrollTop -
+            container.clientHeight
+        ) < 150;
+    }
+
+
+    // =====================================================
+    // FETCH NEW MESSAGES (CORRECT VERSION)
+    // =====================================================
+    function fetchNewMessages() {
+        let ticketId =
+            document.querySelector(
+                "input[name='TicketId']"
+            ).value;
+
+
+        let container =
+            document.querySelector(
+                ".chat-container"
+            );
+
+
+        let shouldScroll =
+            Math.abs(
+                container.scrollHeight -
+                container.scrollTop -
+                container.clientHeight
+            ) < 5;
+
+
+        fetch(
+            "/Staff/GetMessages?ticketId=" +
+            ticketId +
+            "&lastMessageId=" +
+            lastMessageId
+        )
+            .then(r => r.json())
+            .then(data => {
+                if (!data || data.length == 0)
+                    return;
+
+
+                data.forEach(msg => {
+                    let div =
+                        document.createElement("div");
+
+
+                    div.className =
+                        "chat-message " +
+                        (
+                            msg.SenderType === "Staff"
+                                ? "staff-message"
+                                : "patient-message"
+                        );
+
+
+                    div.setAttribute(
+                        "data-id",
+                        msg.TicketMessageId
+                    );
+
+
+                    div.innerHTML =
+                        "<div>" +
+                        escapeHtml(
+                            msg.MessageText
+                        ) +
+                        "</div>" +
+
+                        "<div class='chat-time'>" +
+
+                        msg.SenderType +
+                        " • " +
+
+                        formatDotNetDate(
+                            msg.SentAt
+                        ) +
+
+                        "</div>";
+
+
+                    container.appendChild(div);
+
+
+                    lastMessageId =
+                        msg.TicketMessageId;
+                });
+
+
+                // scroll ONLY if already at bottom
+                if (shouldScroll) {
+                    container.scrollTop =
+                        container.scrollHeight;
+                }
+            });
+    }
+
+
+    // =====================================================
+    // DATE FIX
+    // =====================================================
+    function formatDotNetDate(dotNetDate) {
+        if (!dotNetDate)
+            return "";
+
+        let timestamp =
+            parseInt(
+                dotNetDate.replace(
+                    /[^0-9]/g,
+                    ""
+                )
+            );
+
+        let d =
+            new Date(timestamp);
+
+        return d.toLocaleString();
+    }
+
+
+    // =====================================================
+    // PREVENT XSS
+    // =====================================================
+    function escapeHtml(text) {
+        let div =
+            document.createElement("div");
+
+        div.innerText =
+            text;
+
+        return div.innerHTML;
+    }
+
+
+    // =====================================================
+    // SEARCH NAVIGATION
+    // =====================================================
+    function focusMatch() {
+        matches.forEach(m =>
+            m.classList.remove(
+                "highlight-active"
+            )
+        );
+
+        let el =
+            matches[currentIndex];
+
+        el.classList.add(
+            "highlight-active"
+        );
+
+        el.scrollIntoView({
+            behavior: "smooth",
+            block: "center"
+        });
+
+        updateCounter();
+    }
+
+
+    function nextMatch() {
+        if (matches.length == 0)
+            return;
+
+        currentIndex++;
+
+        if (currentIndex >= matches.length)
+            currentIndex = 0;
+
+        focusMatch();
+    }
+
+
+    function prevMatch() {
+        if (matches.length == 0)
+            return;
+
+        currentIndex--;
+
+        if (currentIndex < 0)
+            currentIndex =
+                matches.length - 1;
+
+        focusMatch();
+    }
+
+
+    function updateCounter() {
+        let counter =
+            document.getElementById(
+                "matchCounter"
+            );
+
+        if (!counter)
+            return;
+
+        if (matches.length == 0)
+            counter.innerText = "";
+        else
+            counter.innerText =
+                "Match " +
+                (currentIndex + 1) +
+                " of " +
+                matches.length;
+    }
+    // =====================================================
+    // INFINITE SCROLL UPWARD (LOAD OLDER MESSAGES)
+    // =====================================================
+
+    let isLoadingOlder = false;
+
+    
+
+
+    function loadOlderMessages() {
+        if (isLoadingOlder)
+            return;
+
+        isLoadingOlder = true;
+
+
+        let container =
+            document.querySelector(
+                ".chat-container"
+            );
+
+
+        let ticketId =
+            document.querySelector(
+                "input[name='TicketId']"
+            ).value;
+
+
+        let firstMessage =
+            container.querySelector(
+                ".chat-message"
+            );
+
+        if (!firstMessage) {
+            isLoadingOlder = false;
+            return;
+        }
+
+
+        let firstMessageId =
+            parseInt(
+                firstMessage.dataset.id
+            );
+
+
+        // store scroll state BEFORE inserting
+        let oldScrollHeight =
+            container.scrollHeight;
+
+        let oldScrollTop =
+            container.scrollTop;
+
+
+        fetch(
+            "/Staff/GetOlderMessages?ticketId=" +
+            ticketId +
+            "&firstMessageId=" +
+            firstMessageId
+        )
+            .then(r => r.json())
+            .then(data => {
+                if (!data || data.length == 0) {
+                    isLoadingOlder = false;
+                    return;
+                }
+
+
+                data.forEach(msg => {
+                    let div =
+                        document.createElement("div");
+
+                    div.className =
+                        "chat-message " +
+                        (
+                            msg.SenderType === "Staff"
+                                ? "staff-message"
+                                : "patient-message"
+                        );
+
+                    div.setAttribute(
+                        "data-id",
+                        msg.TicketMessageId
+                    );
+
+                    div.innerHTML =
+                        "<div>" +
+                        escapeHtml(
+                            msg.MessageText
+                        ) +
+                        "</div>" +
+
+                        "<div class='chat-time'>" +
+                        msg.SenderType +
+                        " • " +
+                        formatDotNetDate(
+                            msg.SentAt
+                        ) +
+                        "</div>";
+
+                    container.prepend(div);
+                });
+
+
+                // restore exact scroll position
+                container.scrollTop =
+                    container.scrollHeight -
+                    oldScrollHeight +
+                    oldScrollTop;
+
+
+                isLoadingOlder = false;
+            });
+    }
+
+    document.getElementById("replyForm").addEventListener("submit", function (e) {
+        e.preventDefault(); // stop page reload
+
+        let form = this;
+        let textarea = document.getElementById("messageTextarea");
+        let message = textarea.value.trim();
+
+        if (!message) return;
+
+        let formData = new FormData(form);
+
+        fetch(form.action, {
+            method: "POST",
+            body: new URLSearchParams(formData)
+        })
+            .then(function () {
+                textarea.value = "";       // clear the box
+                fetchNewMessages();        // pull in the new message
+                scrollToBottom();          // scroll chat to bottom
+            });
+    });
+
+</script>

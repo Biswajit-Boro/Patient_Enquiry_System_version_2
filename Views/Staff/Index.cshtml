@@ -1,0 +1,264 @@
+﻿@model List<Patient_Enquiry_System_version_2.Models.Ticket>
+
+@{
+    ViewBag.Title = "Staff Dashboard";
+
+    // Current selected filter from controller
+    var currentFilter = ViewBag.CurrentFilter as string ?? "All";
+
+    // Ticket counters
+    var openCount = Model.Count(t => t.Status == "Open");
+
+    var progressCount = Model.Count(t => t.Status == "InProgress");
+
+    var closedTodayCount = Model.Count(t =>
+        t.Status == "Closed"
+        && t.ClosedAt.HasValue
+        && t.ClosedAt.Value.ToLocalTime().Date == DateTime.Now.Date
+    );
+}
+
+<style>
+
+    /* ===============================
+       STATUS BADGES
+    =============================== */
+
+    .badge-open {
+        background-color: #dc3545;
+        color: white;
+        padding: 4px 8px;
+        border-radius: 5px;
+    }
+
+    .badge-progress {
+        background-color: #ffc107;
+        color: black;
+        padding: 4px 8px;
+        border-radius: 5px;
+    }
+
+    .badge-closed {
+        background-color: #28a745;
+        color: white;
+        padding: 4px 8px;
+        border-radius: 5px;
+    }
+
+
+    /* ===============================
+       PRIORITY BADGES
+    =============================== */
+
+    .priority-low {
+        background-color: #6c757d;
+        color: white;
+        padding: 4px 8px;
+        border-radius: 5px;
+    }
+
+    .priority-medium {
+        background-color: #17a2b8;
+        color: white;
+        padding: 4px 8px;
+        border-radius: 5px;
+    }
+
+    .priority-high {
+        background-color: #fd7e14;
+        color: white;
+        padding: 4px 8px;
+        border-radius: 5px;
+    }
+
+    .priority-critical {
+        background-color: #dc3545;
+        color: white;
+        padding: 4px 8px;
+        border-radius: 5px;
+    }
+
+
+    /* ===============================
+       COUNTERS
+    =============================== */
+
+    .counter-box {
+        display: inline-block;
+        margin-right: 20px;
+        padding: 10px 20px;
+        border-radius: 6px;
+        font-weight: bold;
+    }
+
+    .counter-open {
+        background-color: #dc3545;
+        color: white;
+    }
+
+    .counter-progress {
+        background-color: #ffc107;
+        color: black;
+    }
+
+    .counter-closed {
+        background-color: #28a745;
+        color: white;
+    }
+
+
+    /* ===============================
+       FILTER BUTTONS
+    =============================== */
+
+    .filter-button {
+        padding: 6px 14px;
+        margin-right: 10px;
+        border-radius: 5px;
+        text-decoration: none;
+        border: 1px solid #333;
+        color: black;
+    }
+
+    .filter-active {
+        background-color: #007bff;
+        color: white;
+    }
+</style>
+
+
+<h2>Staff Dashboard</h2>
+
+
+<div>
+
+    <span class="counter-box counter-open">
+        Open: @openCount
+    </span>
+
+    <span class="counter-box counter-progress">
+        In Progress: @progressCount
+    </span>
+
+    <span class="counter-box counter-closed">
+        Closed Today: @closedTodayCount
+    </span>
+
+</div>
+
+
+<br />
+
+
+<div>
+
+    <a href="@Url.Action("Index","Staff",new { filter="All"})"
+       class="filter-button @(currentFilter=="All"?"filter-active":"")">
+        All
+    </a>
+
+    <a href="@Url.Action("Index","Staff",new { filter="Open"})"
+       class="filter-button @(currentFilter=="Open"?"filter-active":"")">
+        Open
+    </a>
+
+    <a href="@Url.Action("Index","Staff",new { filter="InProgress"})"
+       class="filter-button @(currentFilter=="InProgress"?"filter-active":"")">
+        In Progress
+    </a>
+
+    <a href="@Url.Action("Index","Staff",new { filter="Closed"})"
+       class="filter-button @(currentFilter=="Closed"?"filter-active":"")">
+        Closed
+
+    </a>
+    <a href="@Url.Action("Announcement","Staff")"
+       style="background:#ff9800; color:white; padding:6px 14px; border-radius:4px; text-decoration:none;">
+        📢 Send Announcement
+    </a>
+
+</div>
+
+
+<br />
+
+
+<table border="1" cellpadding="10">
+
+    <tr>
+        <th>Ticket ID</th>
+        <th>Patient ID</th>
+        <th>Status</th>
+        <th>Priority</th>
+        <th>Created</th>
+        <th>Closed</th>
+        <th>Action</th>
+    </tr>
+
+
+    @foreach (var ticket in Model)
+    {
+        <tr>
+
+            <td>@ticket.TicketId</td>
+
+            <td>@ticket.PatientId</td>
+
+            <td>
+
+                @if (ticket.Status == "Open")
+                {
+                    <span class="badge-open">Open</span>
+                }
+                else if (ticket.Status == "InProgress")
+                {
+                    <span class="badge-progress">In Progress</span>
+                }
+                else if (ticket.Status == "Closed")
+                {
+                    <span class="badge-closed">Closed</span>
+                }
+
+            </td>
+
+
+            <td>
+
+                @if (ticket.Priority == "Low")
+                {
+                    <span class="priority-low">Low</span>
+                }
+                else if (ticket.Priority == "Medium")
+                {
+                    <span class="priority-medium">Medium</span>
+                }
+                else if (ticket.Priority == "High")
+                {
+                    <span class="priority-high">High</span>
+                }
+                else if (ticket.Priority == "Critical")
+                {
+                    <span class="priority-critical">Critical</span>
+                }
+
+            </td>
+
+
+            <td>@ticket.CreatedAt.ToLocalTime()</td>
+
+            <td>@(ticket.ClosedAt?.ToLocalTime())</td>
+
+
+            <td>
+
+                <!-- SAFE MVC ROUTING FIX -->
+                <a href="@Url.Action("Details","Staff", new { id = ticket.TicketId })">
+                    View
+                </a>
+
+            </td>
+
+        </tr>
+    }
+
+</table>

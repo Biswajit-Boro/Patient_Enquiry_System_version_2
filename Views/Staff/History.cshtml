@@ -1,0 +1,153 @@
+﻿@model List<Patient_Enquiry_System_version_2.Models.Ticket>
+
+@{
+    ViewBag.Title = "Ticket History";
+
+    // Preserve search text in box after search
+    var search = ViewBag.Search as string ?? "";
+}
+
+<style>
+
+    /* simple badge reuse */
+
+    .badge-open {
+        background-color: #dc3545;
+        color: white;
+        padding: 4px 8px;
+        border-radius: 5px;
+    }
+
+    .badge-progress {
+        background-color: #ffc107;
+        color: black;
+        padding: 4px 8px;
+        border-radius: 5px;
+    }
+
+    .badge-closed {
+        background-color: #28a745;
+        color: white;
+        padding: 4px 8px;
+        border-radius: 5px;
+    }
+</style>
+
+
+<h2>Ticket History</h2>
+
+
+<!-- =====================================================
+SEARCH FORM
+Submits to /Staff/History
+===================================================== -->
+
+<form method="get" action="@Url.Action("History","Staff")">
+
+    <input type="text"
+           name="search"
+           value="@search"
+           placeholder="Search Ticket ID, Patient ID, or Message..."
+           style="width:300px;" />
+
+    <button type="submit">
+        Search
+    </button>
+
+    <a href="@Url.Action("History","Staff")">
+        Clear
+    </a>
+
+</form>
+
+
+<br />
+
+
+<table border="1" cellpadding="10">
+
+    <tr>
+        <th>Ticket ID</th>
+        <th>Patient ID</th>
+        <th>Status</th>
+        <th>Priority</th>
+        <th>Created</th>
+        <th>Closed</th>
+        <th>Action</th>
+    </tr>
+
+
+    @foreach (var ticket in Model)
+    {
+        <tr>
+
+            <td>
+                @ticket.TicketId
+            </td>
+
+            <td>
+                @ticket.PatientId
+            </td>
+
+            <td>
+
+                @if (ticket.Status == "Open")
+                {
+                    <span class="badge-open">Open</span>
+                }
+                else if (ticket.Status == "InProgress")
+                {
+                    <span class="badge-progress">In Progress</span>
+                }
+                else if (ticket.Status == "Closed")
+                {
+                    <span class="badge-closed">Closed</span>
+                }
+
+            </td>
+
+
+            <td>
+                @ticket.Priority
+            </td>
+
+
+            <td>
+                @ticket.CreatedAt.ToLocalTime()
+            </td>
+
+
+            <td>
+                @(ticket.ClosedAt?.ToLocalTime())
+            </td>
+
+
+            <td>
+
+                <a href="@Url.Action(
+                      "Details",
+                      "Staff",
+                      new {
+                          id = ticket.TicketId,
+                          highlight = ViewBag.Search
+                       })">
+
+                       View Matches
+
+                </a>
+
+            </td>
+
+
+        </tr>
+    }
+
+</table>
+
+
+<br />
+
+
+<a href="@Url.Action("Index","Staff")">
+    Back to Dashboard
+</a>

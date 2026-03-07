@@ -1,0 +1,4 @@
+@using Patient_Enquiry_System_version_2.Areas.HelpPage.ModelDescriptions
+@model KeyValuePairModelDescription
+Pair of @Html.DisplayFor(m => Model.KeyModelDescription.ModelType, "ModelDescriptionLink", new { modelDescription = Model.KeyModelDescription }) [key]
+and @Html.DisplayFor(m => Model.ValueModelDescription.ModelType, "ModelDescriptionLink", new { modelDescription = Model.ValueModelDescription }) [value]
